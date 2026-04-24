@@ -1,0 +1,30 @@
+spec_version: 1
+name: fusionops
+type: space
+runtime: fastapi
+app: server.app:app
+port: 7860
+description: >
+  FusionOps V2 is an RL environment for ML computation graph scheduling.
+  Agents learn to fuse operations, manage memory hierarchy, and minimize
+  execution latency on hardware with limited on-chip memory.
+  Features procedural graph generation, adversarial topologies with
+  long skip connections, and a physics-based roofline cost model.
+  Designed for LLM+RL training with compact JSON observations and
+  a sequential hybrid action space (fuse/tile/retain).
+tasks:
+  - name: task1_chain
+    description: Linear chain of 8 ops. Learn basic fusion.
+    difficulty: easy
+  - name: task2_residual
+    description: Residual blocks with skip connections. Learn retention.
+    difficulty: medium
+  - name: task3_attention
+    description: Attention pattern with fan-out. Learn fusion boundaries.
+    difficulty: hard
+  - name: task4_mixed
+    description: Mixed topology with skip connections. Full strategy.
+    difficulty: expert
+  - name: task5_adversarial
+    description: Adversarial long skips + multi-reuse. Only retention-aware policy wins.
+    difficulty: hard
