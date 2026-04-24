@@ -1,6 +1,6 @@
 ---
 title: FusionOps
-emoji: ⚡
+emoji: ♠️
 colorFrom: blue
 colorTo: purple
 sdk: docker
