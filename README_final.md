@@ -1,6 +1,6 @@
 ---
 title: FusionOps
-emoji: ⚡
+emoji: ♠️
 colorFrom: blue
 colorTo: purple
 sdk: docker
@@ -133,7 +133,8 @@ The clearest evidence of genuine learning:
 
 **Peak performance at episode 100** (task4=0.419, task5=0.136). We would use early stopping in production.
 
-![Training Results](training_plots.png)
+<img width="1485" height="658" alt="v2_curves" src="https://github.com/user-attachments/assets/d9720cf1-96a7-4655-95fa-0e239fd99436" />
+
 
 ## Why This Environment is Different
 
