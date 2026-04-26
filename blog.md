@@ -32,13 +32,16 @@ No retention was observed. Instead, we gained a different insight.
 
 The model discovered that fusing all operations was a strategy far superior to selective retention on our small graphs. With only 6-8 operations per task, total fusion was always feasible. A sudden jump in learning toward the final episodes confirmed the model had found this shortcut.
 
-![V1 ablation](v1_ablation.png)
+<img width="1335" height="656" alt="v1_ablation" src="https://github.com/user-attachments/assets/2460d787-0911-4295-81a5-927519bac32f" />
+
 *Each training run on FusionOps improved scores. But the mechanism was total fusion, not the intended scheduling strategies.*
 
-![Diamond proof](diamond_proof.png)
+<img width="1034" height="654" alt="diamond_proof" src="https://github.com/user-attachments/assets/72a8510c-a479-4407-811d-78f460f67d3d" />
+
 *The Diamond Graph reached 0.553 through total fusion, not selective retention.*
 
-![V1 per-task scores](v1_tasks.png)
+<img width="1485" height="656" alt="v1_tasks" src="https://github.com/user-attachments/assets/f9e48a4a-7c0c-4f83-82f2-0ea967638764" />
+
 *FusionOps scores looked promising across all tasks and runs. The model had found a shortcut, not a strategy.*
 
 ### The conclusion
@@ -92,33 +95,40 @@ task5_adversarial      -1.000       -0.070      +0.930
 generalization         -0.775       -0.054      +0.721
 ```
 
-![Before vs after](v2_before_after.png)
+<img width="1485" height="656" alt="v2_before_after" src="https://github.com/user-attachments/assets/9c8f1034-de63-440a-9515-d893be825d8d" />
+
 *Red = untrained. Blue = after 400 episodes. Green = best checkpoint during training. Every task improved.*
 
-![Learning curves](v2_curves.png)
+<img width="1485" height="658" alt="v2_curves" src="https://github.com/user-attachments/assets/7155c865-09e0-41a1-8e3d-f0f1cc101224" />
+
 *Per-task eval scores at each checkpoint. Task4 Mixed (purple) peaks at episode 100 at 0.419.*
 
 ## Key Findings
 
 **Learning plateaued after 100 episodes.** Peak performance hit at episode 100 (approximately 50 minutes of training). After that, the learning signals became noisy. The model had matched the heuristic (hint win rate dropped to 0%), and the DPO loss fell to 1e-4 with no more informative pairwise comparisons to drive further learning.
 
-![Reward trajectory](reward_curve.png)
+<img width="1335" height="583" alt="reward_curve" src="https://github.com/user-attachments/assets/31ca70cc-59c4-442e-b515-4a9728ab391c" />
+
 *Score stabilizes early. Spikes at episodes 110-170 correspond to curriculum graphs with above-average fusion opportunities.*
 
-![Loss convergence](loss_curve.png)
+<img width="1334" height="583" alt="loss_curve" src="https://github.com/user-attachments/assets/0f065dde-6f05-4f9f-95fe-bbfd2810d64d" />
+
 *Three orders of magnitude loss drop. The signal is exhausted by episode 300.*
 
 **Fusion was learned immediately; retention was not dynamic.** Fusion rate climbed from 85% to 100% within 40 episodes. The model learned "always fuse connected ops when constraints allow," matching production compiler behavior. Retention rate stayed flat at 88% throughout, indicating a fixed policy rather than dynamic adaptation to memory pressure.
 
-![Fusion and hint win dynamics](v2_dynamics.png)
+<img width="1784" height="581" alt="v2_dynamics" src="https://github.com/user-attachments/assets/3c707cf9-c031-4c47-b963-33694db85ecd" />
+
 *Left: fusion rate converges to 100%. Right: hint win rate drops 73% to 0%. The model surpassed its teacher.*
 
-![Fusion and retention detail](plot5_fusion_retention.png)
+<img width="1483" height="732" alt="plot5_fusion_retention" src="https://github.com/user-attachments/assets/b02b1e68-a1e1-4ce0-8bc7-97f6b4954f3f" />
+
 *Fusion converges; retention stays flat. One strategy mastered, one not yet.*
 
 **The generalization gap shrank.** FusionOps had a 9.7x gap between fixed-task and generalization scores. Compiler-Scheduler-Env reduced this to 2.3x. Harder training graphs produce more transferable strategies.
 
-![Generalization gap](gen_gap.png)
+<img width="1035" height="659" alt="gen_gap" src="https://github.com/user-attachments/assets/05af4d1b-9d32-4d49-885a-585f27d16b6b" />
+
 *FusionOps to Compiler-Scheduler-Env: generalization gap reduced from 9.7x to 2.3x.*
 
 ## Putting It in Context
@@ -141,11 +151,13 @@ The comparison is not direct (simulated cost model vs. hardware profiling, small
 
 ## Links
 
-- **Environment:** [huggingface.co/spaces/AnishaRoy5555/fusionops-env](https://huggingface.co/spaces/AnishaRoy5555/fusionops-env)
-- **Code:** [github.com/AnishaRoy5555/compiler-scheduler-env](https://github.com/AnishaRoy5555/compiler-scheduler-env)
+- **Initial Environment:** [huggingface.co/spaces/AnishaRoy5555/fusionops-env](https://huggingface.co/spaces/AnishaRoy5555/fusionops-env)
+- **Final Environment:** [huggingface.co/spaces/AnishaRoy5555/compiler-scheduler-env](https://huggingface.co/spaces/AnishaRoy5555/compiler-scheduler-env)
+- **Initial Codebase:** [github.com/AnishaRoy5555/fusionops-env](https://github.com/AnishaRoy5555/fusionops-env)
+- **Final Codebase:** [github.com/AnishaRoy5555/compiler-scheduler-env](https://github.com/AnishaRoy5555/compiler-scheduler-env)
 - **Training notebook:** [RunPod](TODO)
 - **Presentation:** [Slides](TODO)
 
 ---
 
-*Anisha Roy and Anshul Chauhan. OpenEnv Hackathon India 2026.*
+*Anisha Roy and Anshul Badhani. OpenEnv Hackathon India 2026.*
