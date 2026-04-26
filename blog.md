@@ -160,9 +160,8 @@ The comparison is not direct (simulated cost model vs. hardware profiling, small
 - **env1_v1** - [colab.research.google.com/drive/1F9RXon5vpSv8zww-w19ZK4cld1qCjdCz?usp=sharing](https://colab.research.google.com/drive/1F9RXon5vpSv8zww-w19ZK4cld1qCjdCz?usp=sharing)
 - **env1_v2** - [colab.research.google.com/drive/1nHo8L4jy9s3CfC4guZfXJgaJZzaSoVs6?usp=sharing](https://colab.research.google.com/drive/1nHo8L4jy9s3CfC4guZfXJgaJZzaSoVs6?usp=sharing)
 - **env1_v3** - [colab.research.google.com/drive/1eWMkfeAGTgFkSz6JoJJRDPuP1FIJTG1o?usp=sharing](https://colab.research.google.com/drive/1eWMkfeAGTgFkSz6JoJJRDPuP1FIJTG1o?usp=sharing)
-- **env2_v1** - [https://colab.research.google.com/drive/1Z9OCUDprcxQY5SMNDX3n2SsKWWPHhIi0?usp=sharing](https://colab.research.google.com/drive/1Z9OCUDprcxQY5SMNDX3n2SsKWWPHhIi0?usp=sharing)
-   
-- **Presentation:** [Slides](TODO)
+- **env2_v1** - [https://colab.research.google.com/drive/1Z9OCUDprcxQY5SMNDX3n2SsKWWPHhIi0?usp=sharing](https://colab.research.google.com/drive/1Z9OCUDprcxQY5SMNDX3n2SsKWWPHhIi0?usp=sharing)<br><br>
+- **Presentation:** [Slides](PitchDeck.pdf)
 
 ---
 
