@@ -163,10 +163,17 @@ POST /reset {"random": true, "curriculum_level": 0.5}
 
 ## Links
 
-- **HF Space:** [huggingface.co/spaces/AnishaRoy5555/fusionops-env](https://huggingface.co/spaces/AnishaRoy5555/fusionops-env)
-- **GitHub:** [github.com/AnishaRoy5555/compiler-scheduler-env](https://github.com/AnishaRoy5555/compiler-scheduler-env)
-- **Training Notebook:** [Colab/RunPod notebook](TODO)
-- **Slides:** [Presentation deck](TODO)
+- **Initial Environment:** [huggingface.co/spaces/AnishaRoy5555/fusionops-env](https://huggingface.co/spaces/AnishaRoy5555/fusionops-env)
+- **Final Environment:** [huggingface.co/spaces/AnishaRoy5555/compiler-scheduler-env](https://huggingface.co/spaces/AnishaRoy5555/compiler-scheduler-env)
+- **Initial Codebase:** [github.com/AnishaRoy5555/fusionops-env](https://github.com/AnishaRoy5555/fusionops-env)
+- **Final Codebase:** [github.com/AnishaRoy5555/compiler-scheduler-env](https://github.com/AnishaRoy5555/compiler-scheduler-env)
+
+**Training notebook:**
+- **env1_v1** - [colab.research.google.com/drive/1F9RXon5vpSv8zww-w19ZK4cld1qCjdCz?usp=sharing](https://colab.research.google.com/drive/1F9RXon5vpSv8zww-w19ZK4cld1qCjdCz?usp=sharing)
+- **env1_v2** - [colab.research.google.com/drive/1nHo8L4jy9s3CfC4guZfXJgaJZzaSoVs6?usp=sharing](https://colab.research.google.com/drive/1nHo8L4jy9s3CfC4guZfXJgaJZzaSoVs6?usp=sharing)
+- **env1_v3** - [colab.research.google.com/drive/1eWMkfeAGTgFkSz6JoJJRDPuP1FIJTG1o?usp=sharing](https://colab.research.google.com/drive/1eWMkfeAGTgFkSz6JoJJRDPuP1FIJTG1o?usp=sharing)
+- **env2_v1** - [https://colab.research.google.com/drive/1Z9OCUDprcxQY5SMNDX3n2SsKWWPHhIi0?usp=sharing](https://colab.research.google.com/drive/1Z9OCUDprcxQY5SMNDX3n2SsKWWPHhIi0?usp=sharing)<br><br>
+- **Presentation:** [Slides](PitchDeck.pdf)
 
 ## Verified Environment Properties
 
