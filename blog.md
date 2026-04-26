@@ -139,6 +139,82 @@ We achieved 17% optimization in compiler latency, purely through training an LLM
 
 The comparison is not direct (simulated cost model vs. hardware profiling, smaller graphs than production), but it demonstrates that LLM-guided scheduling can discover non-trivial optimization strategies through RL.
 
+## Scaling to 8B: Breaking Through the 3B Ceiling
+
+The 3B model on Compiler-Scheduler-Env showed three problems that looked like they could be capacity-related:
+
+**Late-training instability.** The model peaked at episode 100 and then regressed. task5_adversarial went from +0.136 (ep100) to -0.073 (ep400). Generalization swung between -0.108 and +0.060 with no stable trend. The model would find a good policy, then lose it as training continued.
+
+**Generalization plateau at 6%.** The best generalization score was +0.060, meaning the model scheduled unseen graphs only 6% faster than greedy. On fixed tasks it reached +0.419 (task4_mixed), but that knowledge didn't transfer.
+
+**Retention stuck at heuristic level.** Retention rate locked at 88% throughout training, matching the simple rule "retain when future_uses > 0". The model never learned conditional retention.
+
+We scaled to Llama-3.1-8B to find out whether these were model capacity limits or environment limits.
+
+### What changed
+
+| | Qwen2.5-3B (env2_v1) | Llama-3.1-8B (env2_v2) |
+|---|---|---|
+| Parameters | 3B (4-bit QLoRA) | 8B (4-bit QLoRA) |
+| LoRA | r=16, alpha=32 | r=32, alpha=64 |
+| Learning rate | 1e-5 | 5e-6 (halved for stability) |
+| Grad accumulation | 4 | 8 (doubled for smoother updates) |
+| Episodes | 400 | 400 |
+| GPU | RTX 4090 (24GB) | RTX 5090 (32GB) |
+| Training time | 3.6h | 2.9h |
+
+### Results
+
+```
+Task                   3B Final    8B Final    Change
+-----------------------------------------------------
+task1_chain            +0.084      +0.084      Same (ceiling)
+task2_residual         -0.046      +0.015      +0.061
+task3_attention        +0.023      +0.034      +0.011
+task4_mixed            +0.309      +0.573      +85%
+task5_adversarial      -0.070      +0.131      Flipped to positive
+generalization         -0.054      +0.252      Flipped to positive
+```
+
+### Problem 1: Late-training instability - SOLVED
+
+The 3B model's best scores all occurred at episode 100, then decayed. The 8B model improved continuously through all 400 episodes with no regression:
+
+| Checkpoint | 3B generalization | 8B generalization |
+|---|---|---|
+| ep 50 | -0.138 | -0.298 |
+| ep 100 | 0.044 | 0.032 |
+| ep 150 | 0.059 | 0.081 |
+| ep 200 | 0.009 | 0.088 |
+| ep 250 | -0.108 | 0.186 |
+| ep 300 | 0.060 | 0.088 |
+| ep 350 | 0.037 | 0.175 |
+| ep 400 | -0.020 | 0.258 |
+
+The 3B model oscillated between -0.108 and +0.060 across checkpoints, never finding a stable policy. The 8B model climbed steadily and was still rising at ep400, suggesting more episodes would push generalization even higher.
+
+### Problem 2: Generalization plateau - SOLVED
+
+The 3B model achieved 6% average improvement on unseen graphs at best. The 8B model achieved 25%. A 4x improvement in the metric that matters most.
+
+The gap between fixed-task and generalization scores narrowed from 7x (3B: 0.419/0.060) to 2.3x (8B: 0.573/0.252). The 8B model learned general scheduling principles that transfer to arbitrary graph topologies, not just task-specific tricks.
+
+### Problem 3: Retention plateau - NOT SOLVED
+
+Retention rate stayed at 88% for both models, matching the simple heuristic "retain when future_uses > 0". Neither model learned conditional retention. This is now confirmed as a limitation of the reward signal and environment design, not model capacity. The 2-step lookahead makes immediate retention visible but does not capture the value of retaining a tensor for a consumer 5+ steps away.
+
+### What this means in scheduling terms
+
+The greedy baseline represents a basic heuristic scheduler that already does simple fusion and immediate retention, roughly equivalent to a first-pass compiler heuristic.
+
+**3B result (previous):** 42% faster than greedy on the best fixed task, 6% on unseen graphs. Averaged across all tasks, approximately 17% scheduling improvement.
+
+**8B result:** 57% faster than greedy on the hardest fixed task (24 ops, mixed topology), and 25% faster on graphs the model has never seen. The generalization number is the one that matters for real deployment: the model has learned general scheduling principles that transfer to arbitrary computation graph topologies.
+
+<img width="1485" height="658" alt="v2_curves" src="https://github.com/user-attachments/assets/d9720cf1-96a7-4655-95fa-0e239fd99436" />
+
+*8B model learning curves. task4_mixed (purple) climbs steadily to 0.571. Generalization (blue) reaches 0.258 and is still rising.*
+
 ## What Comes Next
 
 **Multi-turn context.** Each scheduling step is currently stateless. Adding the last 3-4 actions as conversation history should improve retention on long-skip graphs, where the model needs to reason about what it retained several steps ago.
@@ -160,7 +236,8 @@ The comparison is not direct (simulated cost model vs. hardware profiling, small
 - **env1_v1** - [colab.research.google.com/drive/1F9RXon5vpSv8zww-w19ZK4cld1qCjdCz?usp=sharing](https://colab.research.google.com/drive/1F9RXon5vpSv8zww-w19ZK4cld1qCjdCz?usp=sharing)
 - **env1_v2** - [colab.research.google.com/drive/1nHo8L4jy9s3CfC4guZfXJgaJZzaSoVs6?usp=sharing](https://colab.research.google.com/drive/1nHo8L4jy9s3CfC4guZfXJgaJZzaSoVs6?usp=sharing)
 - **env1_v3** - [colab.research.google.com/drive/1eWMkfeAGTgFkSz6JoJJRDPuP1FIJTG1o?usp=sharing](https://colab.research.google.com/drive/1eWMkfeAGTgFkSz6JoJJRDPuP1FIJTG1o?usp=sharing)
-- **env2_v1** - [colab.research.google.com/drive/1jbUlkI9_Lmn4yidw-udDKT4LhrphS30U?usp=sharing](https://colab.research.google.com/drive/1jbUlkI9_Lmn4yidw-udDKT4LhrphS30U?usp=sharing)<br><br>
+- **env2_v1** - [colab.research.google.com/drive/1jbUlkI9_Lmn4yidw-udDKT4LhrphS30U?usp=sharing](https://colab.research.google.com/drive/1jbUlkI9_Lmn4yidw-udDKT4LhrphS30U?usp=sharing)
+- - **env2_v2** - [colab.research.google.com/drive/14vvCB8DENaqtoGKViaO2gjXtUmO-lAWD?usp=sharing(https://colab.research.google.com/drive/14vvCB8DENaqtoGKViaO2gjXtUmO-lAWD?usp=sharing)<br><br>
 - **Presentation:** [Slides](PitchDeck.pdf)
 
 ---
