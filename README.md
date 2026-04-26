@@ -26,7 +26,75 @@ Every deep learning model (transformer, diffusion model, CNN) compiles down to a
 
 Get these decisions wrong and your model runs 2-10x slower than it should. Today, these decisions are made by hand-tuned heuristics in XLA, Triton, and TVM that took years to develop. We asked: can an LLM learn them from scratch?
 
-## The Journey: From v1 to Compiler-Scheduler-Env
+## The Journey: From FusionOps to Compiler-Scheduler-Env
+
+## How the Environments Work
+
+### FusionOps-Env (V1): Subgraph Selection with Naive Baseline
+
+**[github.com/AnishaRoy5555/fusionops-env](https://github.com/AnishaRoy5555/fusionops-env)**
+
+The agent receives a computation graph - a DAG of tensor operations (pointwise ops like relu/layernorm, and matmuls) connected by data dependencies - along with a hardware spec defining fast memory (SRAM scratchpad) capacity and slow memory (DRAM) bandwidth. At each step, the agent sees:
+
+1. **CURRENT STATE**: which ops are completed, which are ready (all predecessors done)
+2. **MEMORY**: what tensors are currently in fast memory and how much capacity remains
+3. **GRAPH SUMMARY**: all ops with status (pending/ready/done), all tensors with their current location (fast/slow/not yet produced)
+4. **VALID ACTION EXAMPLES**: 2-4 dynamically generated valid actions for the current state, guaranteed correct by construction
+5. **CONSTRAINTS**: hard rules (working set must fit in fast memory, ops must be connected, predecessors must be scheduled)
+
+The agent selects a subgraph of ready operations to fuse, a 3D tiling config `[w, h, k]`, and tensor IDs to retain in fast memory:
+
+```
+SCHEDULE ops=[0,1,2,3] config=[128,128,32] retain=[2]
+```
+
+The environment validates the action (connected subgraph? dependencies met? working set fits in fast memory?), computes latency using a roofline cost model (`latency = max(compute_time, memory_transfer_time)` per tile), and returns the next observation. Invalid actions receive graduated penalties: -0.05 for OOM (near-miss, wrong tile size), -0.10 for parse errors, -0.15 for connectivity/retention violations, -0.20 for dependency violations. Valid actions receive +0.02 baseline plus a latency efficiency signal and a +0.05 bonus per additional op fused.
+
+**Cost model details**: Fusion makes intermediate tensors between fused ops ephemeral (zero memory cost). For matmuls, split-K reduces the reduction dimension - trading more accumulation passes for lower peak memory - which can unlock fusion opportunities that would otherwise OOM. Tile traversal order matters: snake (zigzag) traversal keeps the LHS warm across rows, reducing reloads vs raster (left-to-right).
+
+**Scoring**: `score = max(0, (naive_latency - agent_latency) / naive_latency)`. The naive baseline schedules every op individually with no fusion and no retention. Scores range from 0 (no improvement) to ~0.67 (theoretical max on simple chains).
+
+**Four fixed tasks**: `task1_linear` (6 pointwise ops, tests basic fusion), `task2_diamond` (6 ops, tensor T1 consumed by 3 downstream ops - tests retention vs recompute), `task3_matmul` (3 matmuls + 1 pointwise - tests split-K and OOM avoidance), `task4_multistage` (3 matmuls + 5 pointwise with a skip connection spanning 6 steps - tests long-horizon planning).
+
+**Why we moved on**: The combinatorial action space (any subset of ready ops, any 3D config, any subset of tensors) allowed the model to memorize one action string per task. On `task1_linear`, the trained model always produced `SCHEDULE ops=[0,1,2,3,4,5] config=[128,128,1] retain=[]` regardless of the observation. The valid action examples in the observation could be copied verbatim. With only 4 fixed tasks of 6-8 ops, memorization was easier than reasoning. Generalization to unseen graphs: 0.049.
+
+---
+
+### Compiler-Scheduler-Env (V2): Sequential Per-Node with Greedy Baseline
+
+**[github.com/AnishaRoy5555/compiler-scheduler-env](https://github.com/AnishaRoy5555/compiler-scheduler-env)**
+
+A ground-up redesign addressing V1's generalization failure. The agent walks operations in **topological order**, one node at a time. At each node, it outputs a JSON decision:
+
+```json
+{"fuse_with_prev": true, "tile": 128, "retain": [3, 5]}
+```
+
+Three fields:
+- **`fuse_with_prev`** (bool): merge this op into the current kernel group, or start a new kernel. Fused ops share fast memory and eliminate intermediate DRAM traffic.
+- **`tile`** (int from {32, 64, 128, 256}): tiling granularity controlling the compute-memory tradeoff on the roofline. Larger tiles amortize memory latency but demand more scratchpad.
+- **`retain`** (list of node IDs): which tensor outputs to keep in fast memory for future consumers. Costs capacity now, saves DRAM reloads later.
+
+**Observation format**: Compact JSON with a fixed schema. Step 0 delivers the full graph (`nodes` array with op types, shapes, and input edges). Subsequent steps show:
+- `current_node`: the node being scheduled now
+- `current_group`: which ops are in the current fusion kernel and its tile size
+- `fast_mem`: what's currently in fast memory
+- `capacity`: scratchpad size in bytes
+- `max_fusion`: maximum ops per kernel (prevents unrealistically large fusions)
+- **`future_uses`**: a dictionary mapping each tensor ID to the number of downstream operations that still need it. This is the key addition - it provides the minimal information needed for correct retention reasoning (`future_uses["3"] = 2` means tensor 3 has 2 remaining consumers, retain it; `future_uses["5"] = 0` means tensor 5 is dead, don't waste capacity on it)
+- `lookahead`: the next 2 nodes in topological order, letting the agent anticipate fusion opportunities
+
+No valid action examples are provided - the agent must construct actions from the observation, not copy them.
+
+**Cost model**: Physics-based roofline: `latency = max(compute_time, memory_transfer_time) + kernel_launch_overhead`. Same approach used by Google's REGAL, Apache TASO, and TVM Ansor. Each new kernel (non-fused op) incurs a fixed launch overhead. Missing a retention decision means the tensor reloads from DRAM at bandwidth cost (10-100x slower than SRAM access). Invalid JSON actions receive -0.10.
+
+**Scoring**: `score = (greedy_latency - agent_latency) / greedy_latency`. The **greedy baseline** already does basic fusion (fuses consecutive same-type ops) and immediate retention (retains tensors needed by the very next op). Scores can be negative (agent worse than greedy) or positive (agent found optimizations the greedy heuristic missed). This is deliberately harder - the easy wins are already taken, so the agent must discover multi-step retention, cross-type fusion boundaries, and tile-aware memory management to score positive.
+
+**Five fixed tasks**: `task1_chain` (8 ops, basic fusion), `task2_residual` (12 ops, ResNet-style skip connections requiring retention across steps), `task3_attention` (16 ops, Q/K/V fan-out with 3 consumers from one producer), `task4_mixed` (24 ops, diamonds + skips + attention - no single strategy works everywhere), `task5_adversarial` (20 ops, long skip connections and multi-reuse patterns specifically designed to punish greedy one-step-lookahead schedulers - only way to beat greedy is multi-step retention).
+
+**Procedural generation**: 60% of training episodes use curriculum-controlled random graphs (8-50 nodes) with topology mixes including chains, residual blocks, attention patterns, diamonds, and adversarial skip patterns. Difficulty ramps from 0.2 (easy, ~16 ops) to 0.8 (hard, ~46 ops) over training. This prevents the memorization that killed V1.
+
+**Verified properties**: Retention gap of 12-18% on skip graphs (proving retention decisions matter), tile sensitivity of 218% cost variation (tile choice affects latency), reward spread of 0.07-0.33 across random graphs (enough signal for RL, not too sparse), and greedy beatability of 5-17% at peak (hard enough to be interesting, achievable enough to learn).
 
 ### v1: No hints, no learning
 
