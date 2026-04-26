@@ -311,7 +311,7 @@ POST /reset {"random": true, "curriculum_level": 0.5}
 - **env1_v3** - [colab.research.google.com/drive/1eWMkfeAGTgFkSz6JoJJRDPuP1FIJTG1o?usp=sharing](https://colab.research.google.com/drive/1eWMkfeAGTgFkSz6JoJJRDPuP1FIJTG1o?usp=sharing)
 - **env2_v1** - [colab.research.google.com/drive/1jbUlkI9_Lmn4yidw-udDKT4LhrphS30U?usp=sharing](https://colab.research.google.com/drive/1jbUlkI9_Lmn4yidw-udDKT4LhrphS30U?usp=sharing)
 - **env2_v2** - [colab.research.google.com/drive/14vvCB8DENaqtoGKViaO2gjXtUmO-lAWD?usp=sharing](https://colab.research.google.com/drive/14vvCB8DENaqtoGKViaO2gjXtUmO-lAWD?usp=sharing)<br><br>
-- **Presentation:** [Slides](PitchDeck.pdf)
+- **Presentation:** [Slides](https://drive.google.com/drive/folders/1vVotqQQYkDCo3FoNRwuzQyg8LG4_NxHd?usp=sharing)
 
 ## Verified Environment Properties
 
