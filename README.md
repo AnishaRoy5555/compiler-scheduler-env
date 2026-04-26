@@ -62,8 +62,6 @@ The environment validates the action (connected subgraph? dependencies met? work
 
 ### Compiler-Scheduler-Env (V2): Sequential Per-Node with Greedy Baseline
 
-**[github.com/AnishaRoy5555/compiler-scheduler-env](https://github.com/AnishaRoy5555/compiler-scheduler-env)**
-
 A ground-up redesign addressing V1's generalization failure. The agent walks operations in **topological order**, one node at a time. At each node, it outputs a JSON decision:
 
 ```json
