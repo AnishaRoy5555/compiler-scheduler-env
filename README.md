@@ -219,7 +219,7 @@ We scaled to 8B to answer one question: are these limits caused by the model bei
 
 | | Qwen2.5-3B (env2_v1) | Llama-3.1-8B (env2_v2) |
 |---|---|---|
-| Parameters | 3B (4-bit QLoRA) | 8B (4-bit QLoRA) |
+| Parameters | 3B (4-bit LoRA) | 8B (4-bit LoRA) |
 | LoRA | r=16, alpha=32 | r=32, alpha=64 |
 | Learning rate | 1e-5 | 5e-6 (halved for stability) |
 | Grad accumulation | 4 | 8 (doubled for smoother updates) |
