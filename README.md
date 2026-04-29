@@ -319,7 +319,10 @@ These properties confirm the environment creates genuine learning signal:
 
 | Property | Value | Why it matters |
 |----------|-------|----------------|
-| Retention gap | 12-18% on skip graphs | Proves retention decisions have real impact |
-| Tile sensitivity | 218% cost variation | Tile choice meaningfully affects latency |
-| Reward spread | 0.07-0.33 across random graphs | Enough signal for RL, not too sparse |
-| Greedy beatability | 5-17% at peak | Hard enough to be interesting, achievable enough to learn |
+| **Generalization gain (3B → 8B)** | +6% → **+25%** | Confirms the environment supports *scalable learning*, not memorization |
+| **Peak improvement vs greedy** | **+57% (task4_mixed)** | Shows the environment allows discovery of *non-trivial scheduling strategies* |
+| **Retention signal presence** | 12–18% gap on skip graphs | Confirms retention is *valuable but under-optimized* by current agents |
+| **Retention learnability** | ~88% (heuristic ceiling) | Reveals a **reward/observation limitation**, not model capacity |
+| **Tile sensitivity** | 218% cost variation | Ensures tile decisions meaningfully affect reward |
+| **Reward spread** | 0.07–0.33 | Provides stable RL signal without sparsity |
+| **Greedy baseline strength** | Non-trivial (fusion + immediate retention) | Ensures improvements reflect real reasoning, not trivial gains |
