@@ -237,7 +237,7 @@ The greedy baseline represents a basic heuristic scheduler that already does sim
 - **env1_v2** - [colab.research.google.com/drive/1nHo8L4jy9s3CfC4guZfXJgaJZzaSoVs6?usp=sharing](https://colab.research.google.com/drive/1nHo8L4jy9s3CfC4guZfXJgaJZzaSoVs6?usp=sharing)
 - **env1_v3** - [colab.research.google.com/drive/1eWMkfeAGTgFkSz6JoJJRDPuP1FIJTG1o?usp=sharing](https://colab.research.google.com/drive/1eWMkfeAGTgFkSz6JoJJRDPuP1FIJTG1o?usp=sharing)
 - **env2_v1** - [colab.research.google.com/drive/1jbUlkI9_Lmn4yidw-udDKT4LhrphS30U?usp=sharing](https://colab.research.google.com/drive/1jbUlkI9_Lmn4yidw-udDKT4LhrphS30U?usp=sharing)
-- - **env2_v2** - [colab.research.google.com/drive/14vvCB8DENaqtoGKViaO2gjXtUmO-lAWD?usp=sharing(https://colab.research.google.com/drive/14vvCB8DENaqtoGKViaO2gjXtUmO-lAWD?usp=sharing)<br><br>
+- **env2_v2** - [colab.research.google.com/drive/14vvCB8DENaqtoGKViaO2gjXtUmO-lAWD?usp=sharing](https://colab.research.google.com/drive/14vvCB8DENaqtoGKViaO2gjXtUmO-lAWD?usp=sharing)<br><br>
 - **Presentation:** [Slides](https://drive.google.com/drive/folders/1vVotqQQYkDCo3FoNRwuzQyg8LG4_NxHd?usp=sharing)
 
 ---
