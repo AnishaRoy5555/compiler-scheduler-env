@@ -317,6 +317,7 @@ POST /reset {"random": true, "curriculum_level": 0.5}
 
 ## Links
 
+- **Blog**- [blog.md](https://huggingface.co/spaces/AnishaRoy5555/compiler-scheduler-env/blob/main/blog.md)
 - **Initial Environment:** [huggingface.co/spaces/AnishaRoy5555/fusionops-env](https://huggingface.co/spaces/AnishaRoy5555/fusionops-env)
 - **Final Environment:** [huggingface.co/spaces/AnishaRoy5555/compiler-scheduler-env](https://huggingface.co/spaces/AnishaRoy5555/compiler-scheduler-env)
 - **Initial Codebase:** [github.com/AnishaRoy5555/fusionops-env](https://github.com/AnishaRoy5555/fusionops-env)
