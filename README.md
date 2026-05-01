@@ -291,7 +291,7 @@ The 88% retention rate plateau (Section: Problem 3) is not a limitation. It is t
 
 **Why this environment supports the analysis.** Structured JSON observations (`future_uses`, `fast_mem`, `current_node`, `lookahead`) give clean activation-patching targets. Short discrete action tokens (one bool, one tile from {32,64,128,256}, retain list) make logit lens diagnostic. Procedural generation produces counterfactual pairs that differ only in retention pressure. The greedy baseline is interpretable by construction, so every agent-greedy disagreement is a localizable point.
 
-**Analyses run.**
+**Analysis ran:**
 
 - **LoRA delta SVD by layer.** Frobenius norm and top singular value of each `lora_A @ lora_B` plotted by layer index, separated by attention vs MLP. Identifies which layers received meaningful update and which kept their base-model capabilities unchanged.
 - **Activation patching on `future_uses`.** Paired observations constructed (same graph, same `current_node`, `future_uses["k"]` high in A and zero in B). Residual stream patched from A into B at each layer, measuring the layer where `retain: [k]` probability flips. Comparing this flip layer between `model.disable_adapter()` (base Llama) and the trained model distinguishes three hypotheses: LoRA didn't move retention computation (base-model prior), LoRA relocated it (new circuit insufficient), or the model never uses `future_uses` for retention (88% is coincidental).
