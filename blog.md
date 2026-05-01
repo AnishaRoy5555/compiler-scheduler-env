@@ -215,6 +215,38 @@ The greedy baseline represents a basic heuristic scheduler that already does sim
 
 *8B model learning curves. task4_mixed (purple) climbs steadily to 0.571. Generalization (blue) reaches 0.258 and is still rising.*
 
+## Looking Inside the Model: Why Retention Stopped Improving
+
+The 88% retention plateau bothered us. Both the 3B and the 8B model converged to the same simple rule: retain when `future_uses > 0`, ignore everything else. The 8B model had four times the parameters, halved the learning rate, doubled gradient accumulation, trained on the same data, and ended at the same retention behavior as the 3B.
+
+Two explanations were on the table. Either the environment's reward signal couldn't teach conditional retention with two-step lookahead, or the LoRA adapter wasn't updating the right parts of the model. From outside the model, these look identical. Both produce a flat retention curve.
+
+So we opened the model up.
+
+The structure of this environment makes mechanistic analysis unusually clean. Observations are JSON with named fields, which means we can hold a graph constant and change exactly one input - say, set `future_uses["7"]` from 3 to 0 - and ask what happens inside the model. Action tokens are short and discrete: one bool for fusion, one of four tile values, a short retain list. Each of these is a single token position where we can watch a decision form across layers. And we have a known-good baseline (greedy) whose logic we can write down, so any place the agent disagrees with greedy is a specific computation we can chase.
+
+We ran four analyses.
+
+**LoRA delta by layer.** Frobenius norm and top singular value of each LoRA update, plotted across all 32 layers, attention and MLP separately. This shows where the adapter actually changed the model versus where it left the base weights alone. If retention reasoning lives in layers the LoRA barely touched, the base model's behavior is what we're seeing.
+
+**Activation patching on `future_uses`.** We built paired observations: same graph, same current node, same everything except `future_uses["k"]` is 3 in version A and 0 in version B. The correct retention decision is opposite in the two versions. Run both through the model, then patch the residual stream from A into B layer by layer. The layer where the patch flips the retain probability is the layer that reads `future_uses` for retention decisions. We ran this on the trained model and on the base Llama (using `model.disable_adapter()`). If the flip layer is the same in both, LoRA never moved retention computation - the heuristic-matching behavior was the base model's prior all along.
+
+**Retention-reader heads.** When the model outputs `"retain": [3, 7]`, which attention heads attend back to the `"3":` and `"7":` tokens inside `future_uses`? Threshold attention weight at 0.1, average across fifty episodes, and a small number of heads (typically two to four) light up consistently. These are the retention readers. Then check the same heads on episodes where the model should retain but doesn't. If the heads still attend correctly, retrieval is working and the failure is downstream in the MLPs. If they don't attend, the failure is at retrieval.
+
+**Logit lens on the action tokens.** Probability of the bool token after `"fuse_with_prev":`, of each tile value, of the bracket that starts the retain list, plotted layer by layer for both base and trained model. The trained model commits to its decisions earlier and more sharply than the base in the layers LoRA actually changed. When this layer profile lines up with the LoRA delta profile, you have a coherent picture: LoRA changed these layers, and these layers are where the new behavior crystallizes.
+
+This isn't a story about whether the model is good or bad at retention. It's a story about *where in the model* the plateau lives. Three possibilities, three different fixes:
+
+If retention computation never moved during training (same flip layer in base and trained), the base model's circuit is what we're seeing and LoRA didn't reach it. Fix: full fine-tuning, or LoRA targeting different layers.
+
+If retention moved but the new location isn't capable enough, the LoRA found a worse circuit than the base had. Fix: better initialization or more capacity.
+
+If `future_uses` isn't being read at all by either model, the 88% rate is a coincidence - both models are matching a simpler heuristic ("retain whatever has remaining uses, full stop") rather than reasoning conditionally. Fix: change the observation to expose retention pressure more directly, or change the reward to penalize indiscriminate retention.
+
+Without this analysis, the retention plateau is a limitation. With it, it's a finding that points to a specific intervention. The environment surfaced a learnable boundary - fusion and tile decisions cross it, retention doesn't - and the mechanistic work tells us which side of the model the boundary sits on.
+
+This is also, we think, what makes Compiler-Scheduler-Env worth more than its 25% generalization number. The environment is small enough to mechanistically dissect, structured enough to make the dissection meaningful, and behaviorally rich enough that the dissection finds real things. Most RL environments don't give you that.
+
 ## What Comes Next
 
 **Multi-turn context.** Each scheduling step is currently stateless. Adding the last 3-4 actions as conversation history should improve retention on long-skip graphs, where the model needs to reason about what it retained several steps ago.
