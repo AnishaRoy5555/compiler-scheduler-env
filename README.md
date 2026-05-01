@@ -283,6 +283,23 @@ Retention rate stayed at 88% for both models, matching the simple heuristic of "
 
 **Procedural generation prevents memorization.** Training uses curriculum-controlled random graphs so the agent learns general scheduling principles, not task-specific patterns.
 
+## Mechanistic Interpretability: Why the Retention Plateau Happens
+
+The 88% retention rate plateau (Section: Problem 3) is not a limitation. It is the most interesting result in this project, and the environment's structure makes its cause mechanistically traceable.
+
+**The question.** Does the LoRA adapter update the components responsible for long-range retention reasoning, or only the components handling local fusion decisions? If LoRA delta is concentrated where `fuse_with_prev` lives (immediately-preceding token attention) and barely touches the layers that would integrate `future_uses[k]` with `current_node`, the plateau is structurally locked: the parameter update geometry never reached the relevant circuits.
+
+**Why this environment supports the analysis.** Structured JSON observations (`future_uses`, `fast_mem`, `current_node`, `lookahead`) give clean activation-patching targets. Short discrete action tokens (one bool, one tile from {32,64,128,256}, retain list) make logit lens diagnostic. Procedural generation produces counterfactual pairs that differ only in retention pressure. The greedy baseline is interpretable by construction, so every agent-greedy disagreement is a localizable point.
+
+**Analyses run.**
+
+- **LoRA delta SVD by layer.** Frobenius norm and top singular value of each `lora_A @ lora_B` plotted by layer index, separated by attention vs MLP. Identifies which layers received meaningful update and which kept their base-model capabilities unchanged.
+- **Activation patching on `future_uses`.** Paired observations constructed (same graph, same `current_node`, `future_uses["k"]` high in A and zero in B). Residual stream patched from A into B at each layer, measuring the layer where `retain: [k]` probability flips. Comparing this flip layer between `model.disable_adapter()` (base Llama) and the trained model distinguishes three hypotheses: LoRA didn't move retention computation (base-model prior), LoRA relocated it (new circuit insufficient), or the model never uses `future_uses` for retention (88% is coincidental).
+- **Retention-reader head identification.** For episodes emitting `retain: [3, 7]`, attention weights from the action position to the `"3":` and `"7":` tokens inside `future_uses` are averaged across 50 episodes (threshold 0.1). Checking these heads on episodes where the model *should* retain but doesn't separates retrieval failure from downstream failure.
+- **Logit lens on action tokens.** Probability of `true` / `false` after `"fuse_with_prev":`, of each tile value, and of the retain list start, plotted layer-by-layer for base vs trained. Layer-wise divergence aligned with the LoRA SVD profile gives a coherent picture of where the adapter changed behavior.
+
+**Why this matters for the environment claim.** The environment exposes a learnable boundary: fusion and tile selection learn cleanly with this reward signal, retention does not. The mechanistic analysis localizes *where in the model* this boundary sits, distinguishing an environment-design limitation from a LoRA-geometry limitation from a base-model-circuit limitation. This converts a behavioral observation into a circuit-level finding, and tells future users of the environment which axis to push on (deeper lookahead, retention-cost reward, full fine-tune vs LoRA) to break the plateau.
+
 ## API
 
 ```
